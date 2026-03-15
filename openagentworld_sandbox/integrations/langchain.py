@@ -74,7 +74,7 @@ class LangChainSandbox(BaseTool):
         result = self._executor.run(code)
 
         if result.is_timeout:
-            return f"[Timeout] Execution exceeded time limit."
+            return "[Timeout] Execution exceeded time limit."
         if result.error and result.exit_code != 0:
             return f"[Error]\n{result.error}"
         return result.output or "[No output]"

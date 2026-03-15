@@ -1,4 +1,4 @@
-# agent-sandbox
+# openagentworld-sandbox
 
 > A lightweight, framework-agnostic safe code execution library for AI agents.
 
@@ -15,24 +15,24 @@ Every AI agent framework needs to execute code. But:
 - E2B is cloud-only and paid
 - `exec()` is dangerous with no isolation
 
-**agent-sandbox is the missing abstraction layer.**
+**openagentworld-sandbox is the missing abstraction layer.**
 
 ---
 
 ## Install
 
 ```bash
-pip install agent-sandbox
+pip install openagentworld-sandbox
 ```
 
 With Docker support:
 ```bash
-pip install agent-sandbox[docker]
+pip install openagentworld-sandbox[docker]
 ```
 
 With all backends:
 ```bash
-pip install agent-sandbox[all]
+pip install openagentworld-sandbox[all]
 ```
 
 ---
@@ -40,7 +40,7 @@ pip install agent-sandbox[all]
 ## Quick Start
 
 ```python
-from agent_sandbox import SafeExecutor
+from openagentworld_sandbox import SafeExecutor
 
 # Local subprocess (dev/testing)
 executor = SafeExecutor(backend="local")
@@ -63,7 +63,7 @@ result = executor.run("print('running in cloud')")
 ## Security Profiles
 
 ```python
-from agent_sandbox import SafeExecutor, SecurityProfile
+from openagentworld_sandbox import SafeExecutor, SecurityProfile
 
 # STRICT: blocks dangerous imports, no network, 128MB RAM cap, wipes on exit
 executor = SafeExecutor(backend="docker", security=SecurityProfile.STRICT)
@@ -80,7 +80,7 @@ executor = SafeExecutor(backend="local", security=SecurityProfile.PERMISSIVE)
 ## AutoGen Integration
 
 ```python
-from agent_sandbox.integrations.autogen import AutoGenSandbox
+from openagentworld_sandbox.integrations.autogen import AutoGenSandbox
 from autogen_agentchat.agents import AssistantAgent
 
 executor = AutoGenSandbox(backend="docker", security=SecurityProfile.STRICT)
@@ -96,7 +96,7 @@ agent = AssistantAgent(
 ## LangChain Integration
 
 ```python
-from agent_sandbox.integrations.langchain import LangChainSandbox
+from openagentworld_sandbox.integrations.langchain import LangChainSandbox
 from langchain.agents import initialize_agent
 
 tool = LangChainSandbox(backend="docker")
@@ -148,7 +148,7 @@ class ExecutionResult:
 
 ## Contributing
 
-Issues and PRs welcome at [openagentworld/agent-sandbox](https://github.com/openagentworld/agent-sandbox)
+Issues and PRs welcome at [openagentworld/openagentworld-sandbox](https://github.com/openagentworld/openagentworld-sandbox)
 
 ---
 

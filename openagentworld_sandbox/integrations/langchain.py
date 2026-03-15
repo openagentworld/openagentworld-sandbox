@@ -1,8 +1,8 @@
 """
-LangChain integration for agent-sandbox.
+LangChain integration for openagentworld-sandbox.
 
 Usage:
-    from agent_sandbox.integrations.langchain import LangChainSandbox
+    from openagentworld_sandbox.integrations.langchain import LangChainSandbox
     from langchain.agents import initialize_agent
 
     sandbox_tool = LangChainSandbox(backend="docker")

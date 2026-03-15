@@ -1,10 +1,10 @@
 """
-Full test suite for agent-sandbox.
+Full test suite for openagentworld-sandbox.
 Run with: pytest tests/ -v
 """
 
 import pytest
-from agent_sandbox import SafeExecutor, SecurityProfile
+from openagentworld_sandbox import SafeExecutor, SecurityProfile
 
 
 # ─────────────────────────────────────────

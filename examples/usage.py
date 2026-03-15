@@ -1,9 +1,9 @@
 """
-agent-sandbox usage examples.
+openagentworld-sandbox usage examples.
 Run any section independently.
 """
 
-from agent_sandbox import SafeExecutor, SecurityProfile
+from openagentworld_sandbox import SafeExecutor, SecurityProfile
 
 
 # ─────────────────────────────────────────
@@ -12,8 +12,8 @@ from agent_sandbox import SafeExecutor, SecurityProfile
 
 ex = SafeExecutor(backend="local")
 
-result = ex.run("print('hello from agent-sandbox')")
-print(result.output)      # hello from agent-sandbox
+result = ex.run("print('hello from openagentworld-sandbox')")
+print(result.output)      # hello from openagentworld-sandbox
 print(result.exit_code)   # 0
 print(result.error)       # None
 
@@ -65,7 +65,7 @@ except PermissionError as e:
 # 6. AutoGen drop-in (requires autogen installed)
 # ─────────────────────────────────────────
 
-# from agent_sandbox.integrations.autogen import AutoGenSandbox
+# from openagentworld_sandbox.integrations.autogen import AutoGenSandbox
 # from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
 #
 # executor = AutoGenSandbox(backend="docker")
@@ -80,7 +80,7 @@ except PermissionError as e:
 # 7. LangChain drop-in (requires langchain installed)
 # ─────────────────────────────────────────
 
-# from agent_sandbox.integrations.langchain import LangChainSandbox
+# from openagentworld_sandbox.integrations.langchain import LangChainSandbox
 # from langchain.agents import initialize_agent
 # from langchain_openai import ChatOpenAI
 #

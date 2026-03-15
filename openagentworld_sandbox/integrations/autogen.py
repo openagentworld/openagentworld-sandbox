@@ -1,8 +1,8 @@
 """
-AutoGen integration for agent-sandbox.
+AutoGen integration for openagentworld-sandbox.
 
 Usage:
-    from agent_sandbox.integrations.autogen import AutoGenSandbox
+    from openagentworld_sandbox.integrations.autogen import AutoGenSandbox
     from autogen_agentchat.agents import AssistantAgent
 
     executor = AutoGenSandbox(backend="docker")

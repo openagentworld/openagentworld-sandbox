@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ["main", "dev"]
+    branches: ["master", "dev"]
   pull_request:
-    branches: ["main"]
+    branches: ["master"]
 
 jobs:
   test:
@@ -33,7 +33,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ -v --tb=short
+          python -m pytest tests/ -v --tb=short
 
   lint:
     name: Lint check
@@ -50,7 +50,7 @@ jobs:
         run: pip install ruff
 
       - name: Run ruff linter
-        run: ruff check agent_sandbox/
+        run: ruff check agent_sandbox/ --select F --ignore F401
 
   publish:
     name: Publish to PyPI

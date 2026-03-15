@@ -9,19 +9,26 @@ Usage:
     agent = AssistantAgent(name="coder", code_executor=executor)
 """
 
+from typing import Optional, Any, List
 from ..executor import SafeExecutor
 from ..security.profiles import SecurityProfile
 
+
 try:
     from autogen_core.code_executor import (
-        CodeExecutor,
         CodeBlock,
+        CodeExecutor,
         CodeResult,
     )
     AUTOGEN_AVAILABLE = True
 except ImportError:
     AUTOGEN_AVAILABLE = False
-    CodeExecutor = object  # fallback base
+    class CodeExecutor:  # type: ignore
+        pass
+    class CodeBlock:  # type: ignore
+        pass
+    class CodeResult:  # type: ignore
+        pass
 
 
 class AutoGenSandbox(CodeExecutor):
@@ -32,7 +39,7 @@ class AutoGenSandbox(CodeExecutor):
     Args:
         backend: "local", "docker", or "e2b"
         timeout: seconds before execution is killed
-        security: SecurityProfile instance (default: SecurityProfile.DEFAULT)
+        security: Optional SecurityProfile instance (default: SecurityProfile.DEFAULT)
 
     Example:
         executor = AutoGenSandbox(backend="docker", security=SecurityProfile.STRICT)
@@ -42,9 +49,9 @@ class AutoGenSandbox(CodeExecutor):
         self,
         backend: str = "local",
         timeout: int = 30,
-        security: SecurityProfile = None,
+        security: Optional[SecurityProfile] = None,
         language: str = "python",
-        **kwargs
+        **kwargs: Any
     ):
         if not AUTOGEN_AVAILABLE:
             raise ImportError(
@@ -61,9 +68,9 @@ class AutoGenSandbox(CodeExecutor):
 
     async def execute_code_blocks(
         self,
-        code_blocks: list,
-        cancellation_token=None
-    ) -> "CodeResult":
+        code_blocks: list[Any],
+        cancellation_token: Any = None
+    ) -> Any:
         """
         AutoGen calls this with a list of CodeBlock objects.
         We execute each block and return a combined CodeResult.
@@ -83,13 +90,16 @@ class AutoGenSandbox(CodeExecutor):
         for block in code_blocks:
             lang = block.language.lower()
             mapped_lang = language_map.get(lang, "python")
-            
+
             if lang not in language_map and lang != "":
                 outputs.append(f"# Skipped unsupported language: {block.language}")
                 continue
 
             if mapped_lang != self._executor.language:
-                outputs.append(f"# Skipped: executor is configured for {self._executor.language}")
+                outputs.append(
+                    f"# Skipped: executor is configured for "
+                    f"{self._executor.language}"
+                )
                 continue
 
             result = self._executor.run(block.code)

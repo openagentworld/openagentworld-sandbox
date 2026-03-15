@@ -2,6 +2,7 @@ import subprocess
 import tempfile
 import os
 import sys
+from typing import Optional, Any
 from ..executor import ExecutionResult, SandboxBackend
 from ..security.profiles import SecurityProfile
 
@@ -13,7 +14,11 @@ class LocalBackend(SandboxBackend):
     For production isolation, use DockerBackend.
     """
 
-    def __init__(self, security: SecurityProfile = None, **kwargs):
+    def __init__(
+        self,
+        security: Optional[SecurityProfile] = None,
+        **kwargs: Any
+    ):
         self.security = security or SecurityProfile.DEFAULT
 
     def run(self, code: str, timeout: int) -> ExecutionResult:

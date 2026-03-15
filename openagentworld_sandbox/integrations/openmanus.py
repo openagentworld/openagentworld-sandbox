@@ -40,7 +40,7 @@ class OpenManusExecutor:
     def execute(self, code: str) -> dict:
         """Execute code and return result dict."""
         result = self._executor.run(code)
-        
+
         return {
             "success": result.exit_code == 0,
             "output": result.output,
@@ -52,7 +52,7 @@ class OpenManusExecutor:
     async def execute_async(self, code: str) -> dict:
         """Async execute code."""
         result = await self._executor.run_async(code)
-        
+
         return {
             "success": result.exit_code == 0,
             "output": result.output,

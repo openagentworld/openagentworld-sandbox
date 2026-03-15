@@ -4,6 +4,7 @@ import os
 import tarfile
 import io
 import uuid
+from typing import Optional, Any
 from ..executor import ExecutionResult, SandboxBackend
 from ..security.profiles import SecurityProfile
 
@@ -32,19 +33,21 @@ class DockerBackend(SandboxBackend):
 
     def __init__(
         self,
-        image: str = None,
-        security: SecurityProfile = None,
+        image: Optional[str] = None,
+        security: Optional[SecurityProfile] = None,
         language: str = "python",
-        session_id: str = None,
-        **kwargs
+        session_id: Optional[str] = None,
+        **kwargs: Any
     ):
         self.language = language.lower()
-        self.image = image or self.LANGUAGE_IMAGES.get(self.language, self.DEFAULT_IMAGE)
+        self.image = image or self.LANGUAGE_IMAGES.get(
+            self.language, self.DEFAULT_IMAGE
+        )
         self.security = security or SecurityProfile.DEFAULT
         self.session_id = session_id
-        self._container = None
+        self._container: Any = None
         self._container_name = f"sandbox-{session_id or uuid.uuid4().hex[:8]}"
-        
+
         try:
             self.client = docker.from_env()
         except Exception as e:
@@ -63,9 +66,9 @@ class DockerBackend(SandboxBackend):
         else:
             return f"python /tmp/code.{ext}"
 
-    def _build_run_config(self) -> dict:
+    def _build_run_config(self) -> dict[str, Any]:
         """Translate SecurityProfile into Docker run kwargs."""
-        config = {
+        config: dict[str, Any] = {
             "detach": True,
             "remove": True,
         }
@@ -91,13 +94,13 @@ class DockerBackend(SandboxBackend):
 
         return config
 
-    def _ensure_container(self):
+    def _ensure_container(self) -> None:
         """Start container if not already running (for session persistence)."""
         if self._container is None:
             run_config = self._build_run_config()
             run_config["name"] = self._container_name
             run_config["detach"] = True
-            
+
             self._container = self.client.containers.run(
                 self.image,
                 command="sleep infinity",
@@ -106,6 +109,7 @@ class DockerBackend(SandboxBackend):
 
     def run(self, code: str, timeout: int) -> ExecutionResult:
         """Execute code in container. Reuse container if session_id provided."""
+        container = None
         try:
             # Use persistent container for session, or create new one
             if self.session_id:
@@ -118,6 +122,9 @@ class DockerBackend(SandboxBackend):
                     command="sleep 60",
                     **run_config
                 )
+
+            if container is None:
+                raise RuntimeError("Failed to create or find Docker container")
 
             # Package code as a tar archive to copy into container
             code_bytes = code.encode("utf-8")
@@ -136,7 +143,6 @@ class DockerBackend(SandboxBackend):
                 self._get_execute_command(),
                 demux=True
             )
-
             stdout = exec_result.output[0] or b""
             stderr = exec_result.output[1] or b""
 

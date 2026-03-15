@@ -13,13 +13,19 @@ from typing import Optional
 from ..executor import SafeExecutor
 from ..security.profiles import SecurityProfile
 
+from typing import Any
+
+
 try:
     from langchain_core.tools import BaseTool
     from langchain_core.callbacks import CallbackManagerForToolRun
     LANGCHAIN_AVAILABLE = True
 except ImportError:
     LANGCHAIN_AVAILABLE = False
-    BaseTool = object  # fallback
+    class BaseTool:  # type: ignore
+        pass
+    class CallbackManagerForToolRun:  # type: ignore
+        pass
 
 
 class LangChainSandbox(BaseTool):
@@ -30,7 +36,7 @@ class LangChainSandbox(BaseTool):
     Args:
         backend: "local", "docker", or "e2b"
         timeout: seconds before execution is killed
-        security: SecurityProfile instance (default: SecurityProfile.DEFAULT)
+        security: Optional SecurityProfile instance (default: SecurityProfile.DEFAULT)
 
     Example:
         tool = LangChainSandbox(backend="docker", security=SecurityProfile.STRICT)
@@ -45,15 +51,15 @@ class LangChainSandbox(BaseTool):
     )
 
     # Pydantic requires class-level declaration for BaseTool subclasses
-    _executor: SafeExecutor = None
+    _executor: SafeExecutor
 
     def __init__(
         self,
         backend: str = "local",
         timeout: int = 30,
-        security: SecurityProfile = None,
+        security: Optional[SecurityProfile] = None,
         language: str = "python",
-        **kwargs
+        **kwargs: Any
     ):
         if not LANGCHAIN_AVAILABLE:
             raise ImportError(
@@ -63,7 +69,12 @@ class LangChainSandbox(BaseTool):
         super().__init__(**kwargs)
         object.__setattr__(
             self, "_executor",
-            SafeExecutor(backend=backend, timeout=timeout, security=security, language=language)
+            SafeExecutor(
+                backend=backend,
+                timeout=timeout,
+                security=security,
+                language=language
+            )
         )
 
     def _run(
@@ -75,7 +86,7 @@ class LangChainSandbox(BaseTool):
         result = self._executor.run(code)
 
         if result.is_timeout:
-            return f"[Timeout] Execution exceeded time limit."
+            return "[Timeout] Execution exceeded time limit."
         if result.error and result.exit_code != 0:
             return f"[Error]\n{result.error}"
         return result.output or "[No output]"

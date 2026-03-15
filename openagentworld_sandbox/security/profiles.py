@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, ClassVar
 
 
 @dataclass
@@ -17,8 +17,13 @@ class SecurityProfile:
     wipe_on_exit: bool = False
     allow_filesystem_write: bool = True
 
+    # --- Presets (assigned after class) ---
+    DEFAULT: ClassVar["SecurityProfile"]
+    STRICT: ClassVar["SecurityProfile"]
+    PERMISSIVE: ClassVar["SecurityProfile"]
 
-# --- Presets (defined after class so they work on all Python versions) ---
+
+# --- Presets initialization ---
 
 SecurityProfile.DEFAULT = SecurityProfile()
 

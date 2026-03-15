@@ -6,6 +6,7 @@ import tarfile
 import io
 import time
 from pathlib import Path
+from typing import Optional, Any
 from ..executor import ExecutionResult, SandboxBackend
 from ..security.profiles import SecurityProfile
 
@@ -23,7 +24,7 @@ class FirecrackerBackend(SandboxBackend):
 
     DEFAULT_VM_MEMORY_MB = 256
     DEFAULT_VCPU_COUNT = 1
-    
+
     LANGUAGE_IMAGES = {
         "python": "/var/lib/firecracker/images/python.rootfs",
         "javascript": "/var/lib/firecracker/images/node.rootfs",
@@ -32,27 +33,26 @@ class FirecrackerBackend(SandboxBackend):
 
     def __init__(
         self,
-        rootfs: str = None,
-        security: SecurityProfile = None,
+        rootfs: Optional[str] = None,
+        security: Optional[SecurityProfile] = None,
         language: str = "python",
-        session_id: str = None,
-        **kwargs
+        session_id: Optional[str] = None,
+        **kwargs: Any
     ):
         self.language = language.lower()
         self.security = security or SecurityProfile.DEFAULT
         self.session_id = session_id or str(uuid.uuid4())
-        
+
         self.rootfs = rootfs or self.LANGUAGE_IMAGES.get(self.language)
         self.vm_memory = self.security.max_memory_mb or self.DEFAULT_VM_MEMORY_MB
         self.vcpu_count = self.security.max_cpu_percent or self.DEFAULT_VCPU_COUNT
-        
+
         self._vm_dir = Path(f"/tmp/firecracker-{self.session_id}")
         self._vm_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self._kernel = "/usr/bin/firecracker"
         self._is_running = False
         self._check_firecracker()
-
     def _check_firecracker(self) -> None:
         """Check if firecracker is available."""
         result = shutil.which("firecracker")
@@ -94,10 +94,11 @@ class FirecrackerBackend(SandboxBackend):
         """Upload code to the VM via vsock or SSH."""
         code_file = self._vm_dir / "code.py"
         code_file.write_text(code)
-        
-        ext = {"python": "py", "javascript": "js", "bash": "sh"}.get(self.language, "py")
+
+        langs = {"python": "py", "javascript": "js", "bash": "sh"}
+        ext = langs.get(self.language, "py")
         target = f"/tmp/code.{ext}"
-        
+
         return f"cp {code_file} {target} && {self._get_execute_command(target)}"
 
     def _get_execute_command(self, filepath: str) -> str:
@@ -112,21 +113,22 @@ class FirecrackerBackend(SandboxBackend):
     def run(self, code: str, timeout: int) -> ExecutionResult:
         """Execute code inside Firecracker microVM."""
         try:
-            execute_cmd = self._upload_code(code)
-            
+            # Prepare code for execution
+            self._upload_code(code)
+
             result = subprocess.run(
                 ["firecracker", "--api-sock", str(self._vm_dir / "api.sock")],
                 capture_output=True,
                 timeout=timeout
             )
-            
+
             return ExecutionResult(
                 output=result.stdout.decode("utf-8", errors="replace"),
                 exit_code=result.returncode,
                 error=result.stderr.decode("utf-8", errors="replace") or None,
                 backend_used="firecracker"
             )
-            
+
         except subprocess.TimeoutExpired:
             self._cleanup()
             return ExecutionResult(
@@ -140,7 +142,10 @@ class FirecrackerBackend(SandboxBackend):
             return ExecutionResult(
                 output="",
                 exit_code=1,
-                error="Firecracker binary not found. Install from firecracker-microvm.github.io",
+                error=(
+                    "Firecracker binary not found. "
+                    "Install from firecracker-microvm.github.io"
+                ),
                 backend_used="firecracker"
             )
         except Exception as e:
@@ -156,7 +161,7 @@ class FirecrackerBackend(SandboxBackend):
     def _cleanup(self) -> None:
         """Clean up VM resources."""
         try:
-            subprocess.run(["pkill", "-f", f"firecracker-{self.session_id}"], 
+            subprocess.run(["pkill", "-f", f"firecracker-{self.session_id}"],
                          capture_output=True)
             if self._vm_dir.exists():
                 shutil.rmtree(self._vm_dir, ignore_errors=True)

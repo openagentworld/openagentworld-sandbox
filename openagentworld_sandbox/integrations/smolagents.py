@@ -18,10 +18,11 @@ try:
     SMOLAGENTS_AVAILABLE = True
 except ImportError:
     SMOLAGENTS_AVAILABLE = False
-    Tool = object
+    class Tool:  # type: ignore
+        pass
 
 
-class CodeExecutorTool(Tool if SMOLAGENTS_AVAILABLE else object):
+class CodeExecutorTool(Tool):
     """
     Smolagents tool for safe code execution.
     Wraps SafeExecutor for use in smolagents.
@@ -29,7 +30,7 @@ class CodeExecutorTool(Tool if SMOLAGENTS_AVAILABLE else object):
     Args:
         backend: "local", "docker", "e2b", or "firecracker"
         timeout: seconds before execution is killed
-        security: SecurityProfile instance
+        security: Optional SecurityProfile instance
         language: "python", "javascript", "bash"
     """
 
@@ -67,7 +68,7 @@ class CodeExecutorTool(Tool if SMOLAGENTS_AVAILABLE else object):
     def forward(self, code: str) -> str:
         """Execute code and return output."""
         result = self._executor.run(code)
-        
+
         if result.is_timeout:
             return f"[Timeout] Execution exceeded {self._executor.timeout}s limit."
         if result.error:

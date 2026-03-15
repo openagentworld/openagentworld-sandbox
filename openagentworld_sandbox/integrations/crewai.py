@@ -9,20 +9,24 @@ Usage:
     coder = Agent(role="Coder", tools=[tool])
 """
 
-from typing import Optional
+from typing import Optional, Any
 from ..executor import SafeExecutor
 from ..security.profiles import SecurityProfile
 
 
 try:
     from crewai.tools import BaseTool as CrewBaseTool
-    from pydantic import BaseModel, Field
+    from pydantic import BaseModel
+    from pydantic import Field as FieldAlias
     CREWAI_AVAILABLE = True
 except ImportError:
     CREWAI_AVAILABLE = False
-    CrewBaseTool = object
-    BaseModel = object
-    Field = lambda **kw: None
+    class CrewBaseTool:  # type: ignore
+        pass
+    class BaseModel:  # type: ignore
+        pass
+    def FieldAlias(**kwargs: Any) -> Any:  # type: ignore
+        return None
 
 
 class CodeExecutorTool:
@@ -33,7 +37,7 @@ class CodeExecutorTool:
     Args:
         backend: "local", "docker", "e2b", or "firecracker"
         timeout: seconds before execution is killed
-        security: SecurityProfile instance
+        security: Optional SecurityProfile instance
         language: "python", "javascript", "bash"
 
     Example:
@@ -42,10 +46,14 @@ class CodeExecutorTool:
     """
 
     name: str = "code_executor"
-    description: str = "Executes Python code safely in an isolated sandbox. Input should be valid Python code."
+    description: str = (
+        "Executes Python code safely in an isolated sandbox. "
+        "Input should be valid Python code."
+    )
 
     class ToolArgs:
-        code: str = Field(description="The Python code to execute")
+        code: str = FieldAlias(description="The Python code to execute")
+
 
     def __init__(
         self,
@@ -70,7 +78,7 @@ class CodeExecutorTool:
     def _run(self, code: str) -> str:
         """Execute code and return output."""
         result = self._executor.run(code)
-        
+
         if result.is_timeout:
             return f"[Timeout] Execution exceeded {self._executor.timeout}s limit."
         if result.error:

@@ -9,7 +9,7 @@ Usage:
     kernel.add_plugin(CodeExecutionPlugin(backend="docker"), "code")
 """
 
-from typing import Optional
+from typing import Optional, Any
 from ..executor import SafeExecutor
 from ..security.profiles import SecurityProfile
 
@@ -38,12 +38,13 @@ class CodeExecutionPlugin:
 
     def __init__(
         self,
-        backend: str = "local",
+        backend: str = "docker",
         timeout: int = 30,
         security: Optional[SecurityProfile] = None,
         language: str = "python",
-        **kwargs
+        **kwargs: Any
     ):
+
         if not SEMANTIC_KERNEL_AVAILABLE:
             raise ImportError(
                 "Semantic Kernel is not installed. "
@@ -60,7 +61,7 @@ class CodeExecutionPlugin:
     def execute(self, code: str) -> str:
         """Execute code and return output."""
         result = self._executor.run(code)
-        
+
         if result.is_timeout:
             return f"[Timeout] Execution exceeded {self._executor.timeout}s limit."
         if result.error:

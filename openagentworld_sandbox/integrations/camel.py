@@ -9,9 +9,10 @@ Usage:
     agent = RolePlayingAgent(...)
 """
 
-from typing import Optional
+from typing import Optional, Any
 from ..executor import SafeExecutor
 from ..security.profiles import SecurityProfile
+
 
 
 try:
@@ -19,17 +20,18 @@ try:
     CAMEL_AVAILABLE = True
 except ImportError:
     CAMEL_AVAILABLE = False
-    CamelBaseTool = object
+    class CamelBaseTool:  # type: ignore
+        pass
 
 
-class CodeExecutionTool(CamelBaseTool if CAMEL_AVAILABLE else object):
+class CodeExecutionTool(CamelBaseTool):
     """
     Camel tool for safe code execution.
 
     Args:
         backend: "local", "docker", "e2b", or "firecracker"
         timeout: seconds before execution is killed
-        security: SecurityProfile instance
+        security: Optional SecurityProfile instance
         language: "python", "javascript", "bash"
     """
 
@@ -39,8 +41,9 @@ class CodeExecutionTool(CamelBaseTool if CAMEL_AVAILABLE else object):
         timeout: int = 30,
         security: Optional[SecurityProfile] = None,
         language: str = "python",
-        **kwargs
+        **kwargs: Any
     ):
+
         if not CAMEL_AVAILABLE:
             raise ImportError(
                 "Camel is not installed. "
@@ -57,7 +60,7 @@ class CodeExecutionTool(CamelBaseTool if CAMEL_AVAILABLE else object):
     def run(self, code: str) -> str:
         """Execute code and return output."""
         result = self._executor.run(code)
-        
+
         if result.is_timeout:
             return f"[Timeout] Execution exceeded {self._executor.timeout}s limit."
         if result.error:

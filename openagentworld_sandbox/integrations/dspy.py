@@ -9,7 +9,7 @@ Usage:
     code = dspy.Predict(executor)
 """
 
-from typing import Optional
+from typing import Optional, Any
 from ..executor import SafeExecutor
 from ..security.profiles import SecurityProfile
 
@@ -38,7 +38,7 @@ class CodeExecutorModule:
         timeout: int = 30,
         security: Optional[SecurityProfile] = None,
         language: str = "python",
-        **kwargs
+        **kwargs: Any
     ):
         if not DSPY_AVAILABLE:
             raise ImportError(
@@ -55,7 +55,7 @@ class CodeExecutorModule:
     def forward(self, code: str) -> str:
         """Execute code and return output."""
         result = self._executor.run(code)
-        
+
         if result.is_timeout:
             return f"[Timeout] Execution exceeded {self._executor.timeout}s limit."
         if result.error:

@@ -1,3 +1,4 @@
+from typing import Optional, Any
 from ..executor import ExecutionResult, SandboxBackend
 from ..security.profiles import SecurityProfile
 
@@ -13,7 +14,11 @@ class E2BBackend(SandboxBackend):
         executor = SafeExecutor(backend="e2b")
     """
 
-    def __init__(self, security: SecurityProfile = None, **kwargs):
+    def __init__(
+        self,
+        security: Optional[SecurityProfile] = None,
+        **kwargs: Any
+    ):
         self.security = security or SecurityProfile.DEFAULT
         try:
             from e2b_code_interpreter import Sandbox

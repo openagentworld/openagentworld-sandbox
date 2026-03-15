@@ -4,7 +4,7 @@ Run with: pytest tests/ -v
 """
 
 import pytest
-from openagentworld_sandbox import SafeExecutor, SecurityProfile
+from openagentworld_sandbox import SafeExecutor, SecurityProfile, ScanError
 
 
 # ─────────────────────────────────────────
@@ -64,12 +64,12 @@ class TestSecurityProfiles:
 
     def test_strict_blocks_os_import(self):
         ex = SafeExecutor(backend="local", security=SecurityProfile.STRICT)
-        with pytest.raises(PermissionError):
+        with pytest.raises((PermissionError, ScanError)):
             ex.run("import os; print(os.getcwd())")
 
     def test_strict_blocks_subprocess(self):
         ex = SafeExecutor(backend="local", security=SecurityProfile.STRICT)
-        with pytest.raises(PermissionError):
+        with pytest.raises((PermissionError, ScanError)):
             ex.run("import subprocess; subprocess.run(['ls'])")
 
     def test_default_allows_os(self):

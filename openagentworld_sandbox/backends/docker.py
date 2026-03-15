@@ -3,6 +3,7 @@ import tempfile
 import os
 import tarfile
 import io
+import uuid
 from ..executor import ExecutionResult, SandboxBackend
 from ..security.profiles import SecurityProfile
 
@@ -10,23 +11,40 @@ from ..security.profiles import SecurityProfile
 class DockerBackend(SandboxBackend):
     """
     Executes code inside an isolated Docker container.
-    - Each execution spins up a fresh container
-    - Container is auto-removed after execution
     - Respects SecurityProfile (network, memory, CPU)
+    - Supports multiple languages: python, javascript, bash
+    - Session persistence: reuse container across multiple .run() calls
 
     Requires: Docker Desktop running locally.
     """
 
     DEFAULT_IMAGE = "python:3.11-slim"
+    LANGUAGE_IMAGES = {
+        "python": "python:3.11-slim",
+        "javascript": "node:20-slim",
+        "bash": "bash:5.2",
+    }
+    LANGUAGE_EXTENSIONS = {
+        "python": "py",
+        "javascript": "js",
+        "bash": "sh",
+    }
 
     def __init__(
         self,
-        image: str = DEFAULT_IMAGE,
+        image: str = None,
         security: SecurityProfile = None,
+        language: str = "python",
+        session_id: str = None,
         **kwargs
     ):
-        self.image = image
+        self.language = language.lower()
+        self.image = image or self.LANGUAGE_IMAGES.get(self.language, self.DEFAULT_IMAGE)
         self.security = security or SecurityProfile.DEFAULT
+        self.session_id = session_id
+        self._container = None
+        self._container_name = f"sandbox-{session_id or uuid.uuid4().hex[:8]}"
+        
         try:
             self.client = docker.from_env()
         except Exception as e:
@@ -34,6 +52,16 @@ class DockerBackend(SandboxBackend):
                 "Docker is not running or not installed. "
                 "Start Docker Desktop and try again."
             ) from e
+
+    def _get_execute_command(self) -> str:
+        """Get the appropriate command to execute code based on language."""
+        ext = self.LANGUAGE_EXTENSIONS.get(self.language, "py")
+        if self.language == "javascript":
+            return f"node /tmp/code.{ext}"
+        elif self.language == "bash":
+            return f"bash /tmp/code.{ext}"
+        else:
+            return f"python /tmp/code.{ext}"
 
     def _build_run_config(self) -> dict:
         """Translate SecurityProfile into Docker run kwargs."""
@@ -52,7 +80,6 @@ class DockerBackend(SandboxBackend):
 
         # CPU cap
         if self.security.max_cpu_percent:
-            # Docker uses cpu_quota + cpu_period
             config["cpu_period"] = 100000
             config["cpu_quota"] = int(
                 self.security.max_cpu_percent * 1000
@@ -64,23 +91,40 @@ class DockerBackend(SandboxBackend):
 
         return config
 
-    def run(self, code: str, timeout: int) -> ExecutionResult:
-        container = None
-        try:
+    def _ensure_container(self):
+        """Start container if not already running (for session persistence)."""
+        if self._container is None:
             run_config = self._build_run_config()
-
-            # Start container with a sleep so we can copy code in
-            container = self.client.containers.run(
+            run_config["name"] = self._container_name
+            run_config["detach"] = True
+            
+            self._container = self.client.containers.run(
                 self.image,
-                command="sleep 60",
+                command="sleep infinity",
                 **run_config
             )
 
+    def run(self, code: str, timeout: int) -> ExecutionResult:
+        """Execute code in container. Reuse container if session_id provided."""
+        try:
+            # Use persistent container for session, or create new one
+            if self.session_id:
+                self._ensure_container()
+                container = self._container
+            else:
+                run_config = self._build_run_config()
+                container = self.client.containers.run(
+                    self.image,
+                    command="sleep 60",
+                    **run_config
+                )
+
             # Package code as a tar archive to copy into container
             code_bytes = code.encode("utf-8")
+            ext = self.LANGUAGE_EXTENSIONS.get(self.language, "py")
             tar_buffer = io.BytesIO()
             with tarfile.open(fileobj=tar_buffer, mode="w") as tar:
-                info = tarfile.TarInfo(name="code.py")
+                info = tarfile.TarInfo(name=f"code.{ext}")
                 info.size = len(code_bytes)
                 tar.addfile(info, io.BytesIO(code_bytes))
             tar_buffer.seek(0)
@@ -89,7 +133,7 @@ class DockerBackend(SandboxBackend):
 
             # Execute the code
             exec_result = container.exec_run(
-                "python /tmp/code.py",
+                self._get_execute_command(),
                 demux=True
             )
 
@@ -113,8 +157,20 @@ class DockerBackend(SandboxBackend):
             )
 
         finally:
-            if container:
-                try:
-                    container.stop(timeout=2)
-                except Exception:
-                    pass
+            # Only cleanup container if no session
+            if not self.session_id and self._container is None:
+                if container:
+                    try:
+                        container.stop(timeout=2)
+                    except Exception:
+                        pass
+
+    def close(self):
+        """Close the session - stop and remove container."""
+        if self._container:
+            try:
+                self._container.stop(timeout=2)
+                self._container.remove()
+            except Exception:
+                pass
+            self._container = None

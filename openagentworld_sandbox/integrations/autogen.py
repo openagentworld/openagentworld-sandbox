@@ -43,6 +43,7 @@ class AutoGenSandbox(CodeExecutor):
         backend: str = "local",
         timeout: int = 30,
         security: SecurityProfile = None,
+        language: str = "python",
         **kwargs
     ):
         if not AUTOGEN_AVAILABLE:
@@ -54,6 +55,7 @@ class AutoGenSandbox(CodeExecutor):
             backend=backend,
             timeout=timeout,
             security=security,
+            language=language,
             **kwargs
         )
 
@@ -69,10 +71,25 @@ class AutoGenSandbox(CodeExecutor):
         outputs = []
         exit_code = 0
 
+        language_map = {
+            "python": "python",
+            "py": "python",
+            "javascript": "javascript",
+            "js": "javascript",
+            "bash": "bash",
+            "sh": "bash",
+        }
+
         for block in code_blocks:
-            # Only execute Python blocks for now
-            if block.language.lower() not in ("python", "py", ""):
-                outputs.append(f"# Skipped non-python block: {block.language}")
+            lang = block.language.lower()
+            mapped_lang = language_map.get(lang, "python")
+            
+            if lang not in language_map and lang != "":
+                outputs.append(f"# Skipped unsupported language: {block.language}")
+                continue
+
+            if mapped_lang != self._executor.language:
+                outputs.append(f"# Skipped: executor is configured for {self._executor.language}")
                 continue
 
             result = self._executor.run(block.code)

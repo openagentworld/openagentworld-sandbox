@@ -9,13 +9,13 @@ Usage:
     agent = initialize_agent(tools=[sandbox_tool], ...)
 """
 
+from typing import Optional
 from ..executor import SafeExecutor
 from ..security.profiles import SecurityProfile
 
 try:
     from langchain_core.tools import BaseTool
     from langchain_core.callbacks import CallbackManagerForToolRun
-    from typing import Optional
     LANGCHAIN_AVAILABLE = True
 except ImportError:
     LANGCHAIN_AVAILABLE = False
@@ -52,6 +52,7 @@ class LangChainSandbox(BaseTool):
         backend: str = "local",
         timeout: int = 30,
         security: SecurityProfile = None,
+        language: str = "python",
         **kwargs
     ):
         if not LANGCHAIN_AVAILABLE:
@@ -62,7 +63,7 @@ class LangChainSandbox(BaseTool):
         super().__init__(**kwargs)
         object.__setattr__(
             self, "_executor",
-            SafeExecutor(backend=backend, timeout=timeout, security=security)
+            SafeExecutor(backend=backend, timeout=timeout, security=security, language=language)
         )
 
     def _run(

@@ -1,6 +1,7 @@
 import subprocess
 import tempfile
 import os
+import sys
 from ..executor import ExecutionResult, SandboxBackend
 from ..security.profiles import SecurityProfile
 
@@ -29,7 +30,7 @@ class LocalBackend(SandboxBackend):
                 tmp_path = f.name
 
             result = subprocess.run(
-                ["python", tmp_path],
+                [sys.executable, tmp_path],
                 capture_output=True,
                 text=True,
                 timeout=timeout

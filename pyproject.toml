@@ -4,17 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openagentworld-sandbox"
-version = "0.1.0"
+version = "0.1.2"
 description = "A lightweight, framework-agnostic safe code execution library for AI agents"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 authors = [
-    { name = "openagentworld", email = "xeyronox.reseaech@proton.me" }
+    { name = "openagentworld", email = "xeyronox.research@proton.me" }
 ]
-keywords = ["ai", "agents", "sandbox", "code-execution", "llm", "autogen", "langchain"]
+keywords = ["ai", "agents", "sandbox", "code-execution", "llm", "autogen", "langchain", "crewai", "llamaindex", "smolagents"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries",
     "License :: OSI Approved :: MIT License",
@@ -31,15 +31,33 @@ docker = ["docker>=7.0.0"]
 e2b = ["e2b-code-interpreter>=1.0.0"]
 autogen = ["autogen-agentchat>=0.4.0"]
 langchain = ["langchain-core>=0.2.0"]
+crewai = ["crewai>=0.100.0"]
+llamaindex = ["llama-index-core>=0.12.0"]
+smolagents = ["smolagents>=1.0.0"]
+agno = ["agno>=1.0.0"]
+camel = ["camel-ai>=0.2.0"]
+dspy = ["dspy-ai>=2.5.0"]
+haystack = ["haystack-ai>=2.9.0"]
+semantickernel = ["semantic-kernel>=1.20.0"]
 all = [
     "docker>=7.0.0",
     "e2b-code-interpreter>=1.0.0",
     "autogen-agentchat>=0.4.0",
     "langchain-core>=0.2.0",
+    "crewai>=0.100.0",
+    "llama-index-core>=0.12.0",
+    "smolagents>=1.0.0",
+    "agno>=1.0.0",
+    "camel-ai>=0.2.0",
+    "dspy-ai>=2.5.0",
+    "haystack-ai>=2.9.0",
+    "semantic-kernel>=1.20.0",
 ]
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
+    "ruff>=0.3.0",
+    "mypy>=1.9.0",
 ]
 
 [project.urls]
@@ -53,3 +71,11 @@ include = ["openagentworld_sandbox*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+# Select rules for linting
+# E: Error, F: Pyflakes, W: Warning
+select = ["E", "F", "W"]
+ignore = ["F401"] # Ignore unused imports (common in library __init__)
